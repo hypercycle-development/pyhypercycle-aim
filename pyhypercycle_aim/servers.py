@@ -37,8 +37,6 @@ class SimpleQueue:
                         has_manifest_override = True
                     routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
                     endpoints_manifest.append(ff._endpoint_manifest)
-        if not self.manifest.get("currency"):
-            raise AppException("`self.manifest` must define a currency.");
         self.manifest_json = self.manifest.copy()
         self.manifest_json['endpoints'] = endpoints_manifest
         if has_manifest_override is False:
@@ -91,6 +89,8 @@ class SimpleQueue:
         }]
     })
     def queue(self, request):
+        import pdb
+        pdb.set_trace()
         if request.headers.get("cost_only"):
             return JSONResponseCORS({"min": 0, "max": 0, "estimated_cost": 0, "currency": self.manifest['currency']})
         return JSONResponseCORS({"current_job_number": queue_counter,
@@ -120,7 +120,7 @@ class ExampleUsage(SimpleQueue):
                  "input_headers": {},
                  "input_body": {"text": "<Text>"},
                  "output": "<JSON>",
-                 "price_currency": "USD",
+                 "currency": "USD",
                  "price_per_call": {"estimated_cost": 0, "min": 0, 
                                     "max": 0.1},
                  "price_per_mb": {"estimated_cost": 0, "min": 0, 
