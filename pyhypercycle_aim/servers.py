@@ -90,8 +90,6 @@ class SimpleQueue:
         }]
     })
     def queue(self, request):
-        import pdb
-        pdb.set_trace()
         if request.headers.get("cost_only"):
             return JSONResponseCORS({"min": 0, "max": 0, "estimated_cost": 0, "currency": self.manifest['currency']})
         return JSONResponseCORS({"current_job_number": self.queue_counter,
