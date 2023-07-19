@@ -94,10 +94,10 @@ class SimpleQueue:
         pdb.set_trace()
         if request.headers.get("cost_only"):
             return JSONResponseCORS({"min": 0, "max": 0, "estimated_cost": 0, "currency": self.manifest['currency']})
-        return JSONResponseCORS({"current_job_number": queue_counter,
-                                 "next_job_number": queue_counter+len(g_job_queue),
-                                 "queue_length": len(g_job_queue)},
-                                headers={"cost_used": "0", "currency": self.manifest['currency']})
+        return JSONResponseCORS({"current_job_number": self.queue_counter,
+                                 "next_job_number": self.queue_counter+len(self.job_queue),
+                                 "queue_length": len(self.job_queue)},
+                                headers={"cost_used": "0", "currency": self.queue._endpoint_manifest['currency']})
         
 
 
