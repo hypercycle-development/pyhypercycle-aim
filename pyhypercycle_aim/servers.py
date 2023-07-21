@@ -77,6 +77,7 @@ class SimpleQueue:
         "input_query": "",
         "input_body": "",
         "documentation": "Returns the next job number to be worked on, and the current length of the job queue. When calling /parse, jobs will be returned on a first-come first-serve manner. To get an idea of how large the queue is, and what your position in the queue will be in the future, you can call /queue first to get the current length, current job number, and next job number, and then call /parse. The next job number you recieved will tell you roughly what your job number is and while you're waiting for the /parse call to return, you can call /queue again and see what the current job number being processed is.",
+        "input_headers": "",
         "currency": "nullpay",
         "example_calls": [{
             "method": "GET",
