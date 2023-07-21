@@ -83,9 +83,9 @@ class SimpleQueue:
             "query": "",
             "headers": "",
             "output": {
-                "current_job_number": 181,
-                "next_job_number": 184,
-                "queue_length": 3
+                "current_job_number": 1,
+                "next_job_number": 1,
+                "queue_length": 0
             }
         }]
     })
