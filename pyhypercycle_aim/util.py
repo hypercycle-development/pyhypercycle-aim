@@ -1,5 +1,5 @@
 from pyhypercycle_aim.exceptions import AppException
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, HTMLResponse
 from starlette.requests import Request
 from starlette.exceptions import HTTPException
 import asyncio
