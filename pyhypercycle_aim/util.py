@@ -15,6 +15,8 @@ def aim_uri(uri=None, methods=None, endpoint_manifest=None, **kwargs):
         raise AppException("`methods` must be defined")
     if not endpoint_manifest:
         raise AppException("`endpoint_manifest` must be defined")
+
+    endpoint_manifest['uri'] = uri
     def decorator(func):
         if asyncio.iscoroutinefunction(func):
             async def wrapper(*args, **kwargs):
