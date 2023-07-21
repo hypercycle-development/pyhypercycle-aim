@@ -36,9 +36,13 @@ class SimpleQueue:
                     if ff._uri == "/manifest.json":
                         has_manifest_override = True
                     routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
-                    endpoints_manifest.append(ff._endpoint_manifest)
+                    if ff.uri == "/queue":
+                        endpoints_manifest.insert(0,ff._endpoint_manifest)
+                    else:
+                        endpoints_manifest.append(ff._endpoint_manifest)
         self.manifest_json = self.manifest.copy()
         self.manifest_json['endpoints'] = endpoints_manifest
+        
         if has_manifest_override is False:
             routes.append(Route("/manifest.json", 
                                 lambda *args, **kwargs: JSONResponseCORS(self.manifest_json),
@@ -84,8 +88,8 @@ class SimpleQueue:
             "query": "",
             "headers": "",
             "output": {
-                "current_job_number": 2,
-                "next_job_number": 2,
+                "current_job_number": 1,
+                "next_job_number": 1,
                 "queue_length": 0
             }
         }]
