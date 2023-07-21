@@ -36,7 +36,7 @@ class SimpleQueue:
                     if ff._uri == "/manifest.json":
                         has_manifest_override = True
                     routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
-                    if ff.uri == "/queue":
+                    if ff._uri == "/queue":
                         endpoints_manifest.insert(0,ff._endpoint_manifest)
                     else:
                         endpoints_manifest.append(ff._endpoint_manifest)
