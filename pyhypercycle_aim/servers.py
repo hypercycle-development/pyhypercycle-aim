@@ -88,8 +88,8 @@ class SimpleQueue:
             "query": "",
             "headers": "",
             "output": {
-                "current_job_number": 1,
-                "next_job_number": 1,
+                "current_job_number": 0,
+                "next_job_number": 0,
                 "queue_length": 0
             }
         }]
