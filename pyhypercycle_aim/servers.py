@@ -96,11 +96,11 @@ class SimpleQueue:
     })
     def queue(self, request):
         if request.headers.get("cost_only"):
-            return JSONResponseCORS({"min": 0, "max": 0, "estimated_cost": 0, "currency": self.manifest['currency']})
+            return JSONResponseCORS({"min": 0, "max": 0, "estimated_cost": 0, "currency": ""})
         return JSONResponseCORS({"current_job_number": self.queue_counter,
                                  "next_job_number": self.queue_counter+len(self.job_queue),
                                  "queue_length": len(self.job_queue)},
-                                headers={"cost_used": "0", "currency": self.queue._endpoint_manifest['currency']})
+                                headers={"cost_used": "0", "currency": ""})
         
 
 
