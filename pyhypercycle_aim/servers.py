@@ -6,7 +6,6 @@ from pyhypercycle_aim.util import to_async, JSONResponseCORS, handle_interrupt,\
                                   not_found, server_error, default_exception_handlers,\
                                   aim_uri
 from pyhypercycle_aim.exceptions import AppException
-import tinydb
 
 import uvicorn
 import asyncio
