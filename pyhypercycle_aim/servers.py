@@ -69,13 +69,12 @@ class SimpleQueue:
                                      **this_job['kwargs'])
                 this_job['result'] = res
                 self.job_queue.pop(0)
+                self.queue_counter+=1
             await asyncio.sleep(self.sleep_time)
 
     async def add_job(self, func, *args, **kwargs):
         job = {"func": func, "args": args, "kwargs": kwargs}
         self.job_queue.append(job)
-        self.queue_counter += 1
-
         while True:
             await asyncio.sleep(self.sleep_time)
             if 'result' in job:
@@ -179,6 +178,7 @@ class AsyncQueue:
                                      **this_job['kwargs'])
                 this_job['result'] = res
                 self.finished_job(self.job_queue.pop(0))
+                self.queue_counter+=1
             await asyncio.sleep(self.sleep_time)
 
     #########################
@@ -187,7 +187,6 @@ class AsyncQueue:
         job = {"func": func, "args": args, "kwargs": kwargs, "job_number": job_number}
         self.job_queue.append(job)
         
-        self.queue_counter += 1
         return job_number
 
     #########################
