@@ -167,7 +167,7 @@ class AsyncQueue:
         
     #########################
     def finish_job(self, job):
-        raise NotImplemented
+        pass
 
     #########################
     async def queue_loop(self):
