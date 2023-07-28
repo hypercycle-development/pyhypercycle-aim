@@ -166,7 +166,7 @@ class AsyncQueue:
         uvicorn.run(self.app, **uvicorn_kwargs)
         
     #########################
-    def finish_job(self, job):
+    def finished_job(self, job):
         pass
 
     #########################
