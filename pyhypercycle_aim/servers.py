@@ -175,15 +175,17 @@ class AsyncQueue:
                 res = await to_async(this_job['func'], *this_job['args'], 
                                      **this_job['kwargs'])
                 this_job['result'] = res
-                this_job['finish_job'](res)
+                this_job['finish_job'](res)a
+                print("finished job")
                 self.job_queue.pop(0)
                 self.queue_counter+=1
+
             await asyncio.sleep(self.sleep_time)
 
     #########################
-    async def add_job(self, func, *args, **kwargs):
+    async def add_job(self, func, finish_job, *args, **kwargs):
         job_number = self.queue_counter
-        job = {"func": func, "args": args, "kwargs": kwargs, "job_number": job_number}
+        job = {"func": func, "finish_job": finish_job, "args": args, "kwargs": kwargs, "job_number": job_number}
         self.job_queue.append(job)
         
         return job_number
