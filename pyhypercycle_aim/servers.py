@@ -165,9 +165,7 @@ class AsyncQueue:
                              on_startup = on_startup, **starlette_kwargs)
         uvicorn.run(self.app, **uvicorn_kwargs)
         
-    #########################
-    def finished_job(self, job):
-        pass
+    
 
     #########################
     async def queue_loop(self):
@@ -177,7 +175,8 @@ class AsyncQueue:
                 res = await to_async(this_job['func'], *this_job['args'], 
                                      **this_job['kwargs'])
                 this_job['result'] = res
-                self.finished_job(self.job_queue.pop(0))
+                this_job['finish_job'](res)
+                self.job_queue.pop(0)
                 self.queue_counter+=1
             await asyncio.sleep(self.sleep_time)
 
