@@ -175,7 +175,7 @@ class AsyncQueue:
                 res = await to_async(this_job['func'], *this_job['args'], 
                                      **this_job['kwargs'])
                 this_job['result'] = res
-                this_job['finish_job'](res)a
+                this_job['finish_job'](res)
                 print("finished job")
                 self.job_queue.pop(0)
                 self.queue_counter+=1
