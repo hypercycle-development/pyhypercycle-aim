@@ -150,7 +150,19 @@ class AsyncQueue:
                         endpoints_manifest.append(ff._endpoint_manifest)
         self.manifest_json = self.manifest.copy()
         self.manifest_json['endpoints'] = endpoints_manifest
-        
+        if hasattr(self, "manifest_uri_order"):
+            new_endpoints = []
+            for entry in self.manifest_uri_order:
+                for ep,k in enumerate(endpoints_manifest):
+                    if ep['uri'] == entry:
+                        break
+                else:
+                    continue
+                new_endpoints.append(ep)
+                del endpoints_manifest[k]
+            new_endpoints.extend(endpoints_manifest)
+            self.manifest_json['endpoints'] = new_endpoints
+                    
         if has_manifest_override is False:
             routes.append(Route("/manifest.json", 
                                 lambda *args, **kwargs: JSONResponseCORS(self.manifest_json),
