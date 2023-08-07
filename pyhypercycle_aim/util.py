@@ -5,7 +5,7 @@ from starlette.exceptions import HTTPException
 import asyncio
 import signal
 import concurrent.futures
-
+import json
 
 
 def aim_uri(uri=None, methods=None, endpoint_manifest=None, **kwargs):
@@ -49,7 +49,7 @@ def to_async(function, *args, **kwargs):
 
 
 #CORS response helper
-def JSONResponseCORS(data, headers=None):
+def JSONResponseCORS(data, headers=None, costs=None):
     cors_headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST",
@@ -59,6 +59,8 @@ def JSONResponseCORS(data, headers=None):
 
     if headers is None:
         headers = {}
+    if costs is not None:
+        headers['costs'] = json.dumps(costs)
 
     for key in cors_headers:
         headers[key] = cors_headers[key]
