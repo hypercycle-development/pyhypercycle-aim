@@ -27,8 +27,8 @@ class SimpleServer:
             exception_handlers = default_exception_handlers
         if on_startup is None:
             on_startup = []
-
-        on_startup.append(self.startup_job)
+        if hasattr(self, 'startup_job'):
+            on_startup.append(self.startup_job)
         #collect routes from this server
         routes = []
         endpoints_manifest = []
