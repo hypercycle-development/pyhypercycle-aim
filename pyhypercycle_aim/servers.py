@@ -12,6 +12,56 @@ import asyncio
 import time
 
 
+class SimpleServer:
+    """
+        Helper server object that uses the aim_uri decorator.
+    """
+    def run(self, debug=True, exception_handlers=None,
+                  on_startup=None, concurrent=1, sleep_time=0.25, 
+                  starlette_kwargs=None, uvicorn_kwargs=None):
+        if not starlette_kwargs:
+            starlette_kwargs = {}
+        if not uvicorn_kwargs:
+            uvicorn_kwargs = {}
+        if exception_handlers is None:
+            exception_handlers = default_exception_handlers
+        if on_startup is None:
+            on_startup = []
+
+        on_startup.append(self.startup_job)
+        #collect routes from this server
+        routes = []
+        endpoints_manifest = []
+        has_manifest_override = False
+        for arg in dir(self):
+            ff = getattr(self, arg)
+            if callable(ff):
+                if hasattr(ff, "_uri"):
+                    if ff._uri == "/manifest.json":
+                        has_manifest_override = True
+                    routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
+                    endpoints_manifest.append(ff._endpoint_manifest)
+        self.manifest_json = self.manifest.copy()
+        self.manifest_json['endpoints'] = endpoints_manifest
+        
+        if has_manifest_override is False:
+            routes.append(Route("/manifest.json", 
+                                lambda *args, **kwargs: JSONResponseCORS(self.manifest_json),
+                                methods=["GET"]))
+
+        self.job_queue = []
+        self.queue_counter = 0
+        self.concurrent = concurrent
+        self.sleep_time = sleep_time
+        self.app = Starlette(debug=debug, routes=routes,
+                             exception_handlers=exception_handlers,
+                             on_startup = on_startup, **starlette_kwargs)
+        uvicorn.run(self.app, **uvicorn_kwargs)
+
+    def get_user_address(self, request):
+        return request.headers.get("hypc_user", None)
+
+
 class SimpleQueue:
     """
         Helper server to serve an synchronous job process, like model inference.
