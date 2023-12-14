@@ -1,11 +1,13 @@
-from pyhypercycle_aim.exceptions import AppException
-from starlette.responses import JSONResponse, HTMLResponse
-from starlette.requests import Request
-from starlette.exceptions import HTTPException
 import asyncio
-import signal
 import concurrent.futures
 import json
+import signal
+
+from starlette.exceptions import HTTPException
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, JSONResponse
+
+from pyhypercycle_aim.exceptions import AppException
 
 
 def aim_uri(uri=None, methods=None, endpoint_manifest=None, **kwargs):
@@ -49,7 +51,7 @@ def to_async(function, *args, **kwargs):
 
 
 #CORS response helper
-def JSONResponseCORS(data, headers=None, costs=None):
+def JSONResponseCORS(data, headers=None, costs=None, status_code=200):
     cors_headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST",
@@ -64,7 +66,7 @@ def JSONResponseCORS(data, headers=None, costs=None):
 
     for key in cors_headers:
         headers[key] = cors_headers[key]
-    return JSONResponse(data, headers=headers)
+    return JSONResponse(data, headers=headers, status_code=status_code)
 
 
 def handle_interrupt(signal, frame):
@@ -93,4 +95,3 @@ default_exception_handlers = {
     404: not_found,
     500: server_error
 }
-
