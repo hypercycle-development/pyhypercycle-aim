@@ -1,15 +1,12 @@
-from starlette.applications import Starlette
-from starlette.responses import PlainTextResponse, HTMLResponse
-from starlette.routing import Route
-from starlette.exceptions import HTTPException
-from pyhypercycle_aim.util import to_async, JSONResponseCORS, handle_interrupt,\
-                                  not_found, server_error, default_exception_handlers,\
-                                  aim_uri
-from pyhypercycle_aim.exceptions import AppException
+import asyncio
+import inspect
+import time
 
 import uvicorn
-import asyncio
-import time
+from pyhypercycle_aim.util import to_async, JSONResponseCORS, default_exception_handlers, \
+    aim_uri
+from starlette.applications import Starlette
+from starlette.routing import Route
 
 
 class BaseServer:
@@ -121,8 +118,12 @@ class SimpleQueue(BaseServer):
         while True:
             if len(self.job_queue) > 0:
                 this_job = self.job_queue[0]
-                res = await to_async(this_job['func'], *this_job['args'], 
-                                     **this_job['kwargs'])
+                if inspect.iscoroutinefunction(this_job['func']):
+                    res = await this_job['func'](*this_job['args'], **this_job['kwargs'])
+                else:
+                    res = await to_async(this_job['func'], *this_job['args'],
+                                         **this_job['kwargs'])
+
                 this_job['result'] = res
                 self.job_queue.pop(0)
                 self.queue_counter+=1
