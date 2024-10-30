@@ -67,6 +67,25 @@ def JSONResponseCORS(data, headers=None, costs=None):
     return JSONResponse(data, headers=headers)
 
 
+def HTMLResponseCORS(data, headers=None, costs=None):
+    cors_headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Credentials": "false"
+    }
+
+    if headers is None:
+        headers = {}
+    if costs is not None:
+        headers['costs'] = json.dumps(costs)
+
+    for key in cors_headers:
+        headers[key] = cors_headers[key]
+    return HTMLResponse(data, headers=headers)
+
+
+
 def handle_interrupt(signal, frame):
     #Makes shutting down a bit easier
     # Cleanup code here (if any)

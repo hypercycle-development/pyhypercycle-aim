@@ -12,7 +12,16 @@ import asyncio
 import time
 
 
-class SimpleServer:
+class BaseServer:
+    def get_user_address(self, request):
+        return request.headers.get("hypc_user", None)
+
+    def is_private_call(self, request):
+        return request.headers.get("hypc_is_private", None)
+
+
+
+class SimpleServer(BaseServer):
     """
         Helper server object that uses the aim_uri decorator.
     """
@@ -58,11 +67,8 @@ class SimpleServer:
                              on_startup = on_startup, **starlette_kwargs)
         uvicorn.run(self.app, **uvicorn_kwargs)
 
-    def get_user_address(self, request):
-        return request.headers.get("hypc_user", None)
 
-
-class SimpleQueue:
+class SimpleQueue(BaseServer):
     """
         Helper server to serve an synchronous job process, like model inference.
     """
@@ -158,14 +164,8 @@ class SimpleQueue:
     def startup_job(self):
         asyncio.create_task(self.queue_loop())
 
-    def get_user_address(self, request):
-        return request.headers.get("hypc_user", None)
 
-
-
-
-
-class AsyncQueue:
+class AsyncQueue(BaseServer):
     """
         Helper server to serve an async job process, like training a model.
     """
@@ -182,7 +182,11 @@ class AsyncQueue:
         if on_startup is None:
             on_startup = []
 
-        on_startup.append(self.startup_job)
+        on_startup.append(queue_startup)
+        try:
+            on_startup.append(self.startup_job)
+        except:
+            pass
         #collect routes from this server
         routes = []
         endpoints_manifest = []
@@ -226,10 +230,11 @@ class AsyncQueue:
                              exception_handlers=exception_handlers,
                              on_startup = on_startup, **starlette_kwargs)
         uvicorn.run(self.app, **uvicorn_kwargs)
-        
-    
 
     #########################
+    def queue_startup(self):
+        asyncio.create_task(self.queue_loop())
+
     async def queue_loop(self):
         while True:
             if len(self.job_queue) > 0:
@@ -241,7 +246,6 @@ class AsyncQueue:
                 print("finished job")
                 self.job_queue.pop(0)
                 self.queue_counter+=1
-
             await asyncio.sleep(self.sleep_time)
 
     #########################
@@ -249,7 +253,6 @@ class AsyncQueue:
         job_number = self.queue_counter
         job = {"func": func, "finish_job": finish_job, "args": args, "kwargs": kwargs, "job_number": job_number}
         self.job_queue.append(job)
-        
         return job_number
 
     #########################
@@ -277,10 +280,6 @@ class AsyncQueue:
                                  "next_job_number": self.queue_counter+len(self.job_queue),
                                  "queue_length": len(self.job_queue)},
                                 headers={"cost_used": "0", "currency": ""})
-    ############################
-    def startup_job(self):
-        asyncio.create_task(self.queue_loop())
-
 
 
 
