@@ -8,7 +8,7 @@ def main(args=None):
 
     setup_required_packages = []
 
-    required_packages = ["starlette", "uvicorn"
+    required_packages = ["starlette", "uvicorn", "filelock"
                         ]
 
     test_required_packages = ["nose", "coverage"]

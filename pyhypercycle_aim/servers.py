@@ -140,9 +140,8 @@ class SimpleQueue(BaseServer):
     @aim_uri(uri="/queue", methods=["GET"], endpoint_manifest={
         "input_query": "",
         "input_body": "",
-        "documentation": "Returns the next job number to be worked on, and the current length of the job queue. When calling /parse, jobs will be returned on a first-come first-serve manner. To get an idea of how large the queue is, and what your position in the queue will be in the future, you can call /queue first to get the current length, current job number, and next job number, and then call /parse. The next job number you recieved will tell you roughly what your job number is and while you're waiting for the /parse call to return, you can call /queue again and see what the current job number being processed is.",
+        "documentation": "Returns the next job number to be worked on, and the current length of the job queue. When calling /parse, jobs will be returned on a first-come first-serve manner. To get an idea of how large the queue is, and what your position in the queue will be in the future, you can call /queue first to get the current length, current job number, and next job number, and later call /queue again to see how fast the queue is being processed and how many jobs are left.",
         "input_headers": "",
-        "currency": "nullpay",
         "example_calls": [{
             "method": "GET",
             "query": "",
@@ -152,7 +151,8 @@ class SimpleQueue(BaseServer):
                 "next_job_number": 0,
                 "queue_length": 0
             }
-        }]
+        }],
+        "is_public": True
     })
     def queue(self, request):
         if request.headers.get("cost_only"):
@@ -236,6 +236,7 @@ class AsyncQueue(BaseServer):
     def queue_startup(self):
         asyncio.create_task(self.queue_loop())
 
+    #########################
     async def queue_loop(self):
         while True:
             if len(self.job_queue) > 0:
@@ -243,26 +244,36 @@ class AsyncQueue(BaseServer):
                 res = await to_async(this_job['func'], *this_job['args'], 
                                      **this_job['kwargs'])
                 this_job['result'] = res
-                this_job['finish_job'](res)
+                this_job['finish_job'](this_job['job_number'])
                 print("finished job")
                 self.job_queue.pop(0)
                 self.queue_counter+=1
             await asyncio.sleep(self.sleep_time)
 
     #########################
-    async def add_job(self, func, finish_job, *args, **kwargs):
-        job_number = self.queue_counter
-        job = {"func": func, "finish_job": finish_job, "args": args, "kwargs": kwargs, "job_number": job_number}
+    async def add_async_job(self, user, func, finish_job, *args, **kwargs):
+        job_number = self.queue_counter+len(self.job_queue)
+        job = {"user": user, "func": func, "finish_job": finish_job, "args": args, "kwargs": kwargs, 
+               "job_number": job_number}
         self.job_queue.append(job)
+        self.jobs[job_number] = job
         return job_number
+
+    #########################
+    def get_job(self, job_number):
+        return self.jobs.get(job_number)
+
+    #########################
+    def clear_job(self, job_number):
+        if self.jobs.get(job_number):
+           del self.jobs[job_number]
 
     #########################
     @aim_uri(uri="/queue", methods=["GET"], endpoint_manifest={
         "input_query": "",
         "input_body": "",
-        "documentation": "Returns the next job number to be worked on, and the current length of the job queue. When calling /parse, jobs will be returned on a first-come first-serve manner. To get an idea of how large the queue is, and what your position in the queue will be in the future, you can call /queue first to get the current length, current job number, and next job number, and then call /parse. The next job number you recieved will tell you roughly what your job number is and while you're waiting for the /parse call to return, you can call /queue again and see what the current job number being processed is.",
+        "documentation": "Returns the next job number to be worked on, and the current length of the job queue. When calling /parse, jobs will be returned on a first-come first-serve manner. To get an idea of how large the queue is, and what your position in the queue will be in the future, you can call /queue first to get the current length, current job number, and next job number, and later call /queue again to see how fast the queue is being processed and how many jobs are left.",
         "input_headers": "",
-        "currency": "nullpay",
         "example_calls": [{
             "method": "GET",
             "query": "",
@@ -272,7 +283,8 @@ class AsyncQueue(BaseServer):
                 "next_job_number": 0,
                 "queue_length": 0
             }
-        }]
+        }],
+        "is_public": True
     })
     def queue(self, request):
         if request.headers.get("cost_only"):
@@ -282,8 +294,37 @@ class AsyncQueue(BaseServer):
                                  "queue_length": len(self.job_queue)},
                                 headers={"cost_used": "0", "currency": ""})
 
+    #########################
+    @aim_uri(uri="/result", methods=["GET"], endpoint_manifest={
+        "input_query": "?job_number=<Int>",
+        "input_body": "",
+        "documentation": ".",
+        "input_headers": "",
+        "output": {"job_number": "<Int>", "completed":"<Bool>", "result": "<Any>"},
+        "example_calls": [{
+            "method": "GET",
+            "query": "?job_number=3",
+            "headers": "",
+            "output": {
+                "job_number": : 3,
+                "completed": True,
+                "result": {"translation": "Hallo, Walt!"}
+            }
+        }]
+    })
+    def result(self, request):
+        if request.headers.get("cost_only"):
+            return JSONResponseCORS({"min": 0, "max": 0, "estimated_cost": 0, "currency": ""})
 
+        job = self.get_job(job_number)
+        user = self.get_user_address(request)
+        if user != job.get("user"):
+            Return JSONResponseCORS("error": "User not authorized for this job."}, status=403, costs=[])
+        output = {"job_number": job['job_number'],
+                  "completed": job['completed']
+                  "result": job.get("result")}
 
+        return JSONResponseCORS(output, costs=[])
 
 
 
