@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import json
 import signal
+import sys
 
 from starlette.exceptions import HTTPException
 from starlette.requests import Request

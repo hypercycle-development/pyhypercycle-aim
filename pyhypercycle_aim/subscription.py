@@ -111,6 +111,6 @@ class SubscriptionManager:
     def remove_callback(cls):
         raise NotImplementedError()
 
-    @classmetod
+    @classmethod
     def expired_callback(cls):
         raise NotImplementedError()
