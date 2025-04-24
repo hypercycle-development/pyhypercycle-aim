@@ -319,7 +319,7 @@ class AsyncQueue(BaseServer):
         job = self.get_job(job_number)
         user = self.get_user_address(request)
         if user != job.get("user"):
-            Return JSONResponseCORS("error": "User not authorized for this job."}, status=403, costs=[])
+            Return JSONResponseCORS("error": "User not authorized for this job.", status=403, costs=[])
         output = {"job_number": job['job_number'],
                   "completed": job['completed']
                   "result": job.get("result")}
