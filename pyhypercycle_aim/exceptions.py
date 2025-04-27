@@ -3,3 +3,6 @@ class AppException(Exception):
 
 class SubscriptionError(Exception):
     pass
+
+class SSHPortManagerError(Exception):
+    pass   

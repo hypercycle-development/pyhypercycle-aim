@@ -82,12 +82,34 @@ def HTMLResponseCORS(data, headers=None, costs=None):
         headers = {}
     if costs is not None:
         headers['costs'] = json.dumps(costs)
-
     for key in cors_headers:
         headers[key] = cors_headers[key]
     return HTMLResponse(data, headers=headers)
 
+def FileResponseCORS(filedata, filename, media_type=None, headers=None, costs=None, status_code=200):
+    cors_headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Credentials": "false"
+    }    
+    if headers is None:
+        headers = {}
+    if costs is not None:
+        headers['costs'] = json.dumps(costs)
+    for key in cors_headers:
+        headers[key] = cors_headers[key]
 
+    headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    if media_type is None:
+        media_type = "application/octet-stream"
+
+    return Response(
+        content=filedata,
+        media_type=media_type,
+        headers=headers
+    )
 
 def handle_interrupt(signal, frame):
     #Makes shutting down a bit easier

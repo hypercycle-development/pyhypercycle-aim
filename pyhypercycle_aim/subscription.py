@@ -3,8 +3,8 @@ import time
 import hashlib
 import json
 import asyncio
+from filelock import FileLock
 from pyhypercycle_aim.exceptions import SubscriptionError
-
 
 class SubscriptionManager:
     """
@@ -32,7 +32,6 @@ class SubscriptionManager:
             data['expired'] = False
             data['deadline'] = time.time()
         data['deadline'] += deadline
-
         cls.save_subscription(data)
 
     @classmethod
