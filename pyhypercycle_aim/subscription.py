@@ -6,6 +6,7 @@ import asyncio
 from filelock import FileLock
 from pyhypercycle_aim.exceptions import SubscriptionError
 
+
 class SubscriptionManager:
     """
         Subscription helper for AIMs.

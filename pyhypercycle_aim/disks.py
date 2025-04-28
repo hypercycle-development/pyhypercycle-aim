@@ -96,3 +96,5 @@ class DiskSpaceManager:
             total += size
             ll.append((fn.partition("_")[2].rpartition(".iso")[0], size))
         return {"total": total, "disks": ll}
+
+DiskManager.update_disks()
