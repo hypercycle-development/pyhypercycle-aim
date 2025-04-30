@@ -3,7 +3,6 @@ import hashlib
 from pathlib import Path
 from filelock import FileLock
 
-
 class StorageManager:
     _storage_dir = Path("/container_mount/storage_manager")
 

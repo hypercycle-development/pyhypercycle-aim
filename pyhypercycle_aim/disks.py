@@ -1,7 +1,7 @@
 import subprocess
 import os
 from filelock import FileLock
-from pyhypercycle_aim import DiskError
+from pyhypercycle_aim.exceptions import DiskError
 
 os.makedirs("/container_mount/virtual_disks", exist_ok=True)
 os.makedirs("/container_mount/disk_mounts", exist_ok=True)
@@ -11,7 +11,7 @@ class DiskSpaceManager:
     def update_disks(cls):
         for fn in os.listdir("/container_mount/virtual_disks"):
             if fn.endswith(".iso") and fn.startswith("disk_"):
-                disk_id = fn.partition("disk_")[2].rpartition(".iso")[0]a
+                disk_id = fn.partition("disk_")[2].rpartition(".iso")[0]
                 if not cls.is_mounted(disk_id):
                     cls._mount_disk(disk_id)
 
@@ -27,7 +27,7 @@ class DiskSpaceManager:
             return True
         return False
 
-    @classsmethod
+    @classmethod
     def add_disk(cls, block_size, count, disk_id, max_usage=None):
         if not disk_id.isalnum():
             raise DiskError(f"Invalid disk_id {disk_id}: must be alpha-numeric.")
@@ -43,7 +43,7 @@ class DiskSpaceManager:
                 raise DiskError(f"'count' must be a positive integer.")
 
             size = 0
-            if block_size = "1K":
+            if block_size == "1K":
                 size = count*1024
             elif block_size == "1M":
                 size = count*(1024*1024)
@@ -97,4 +97,4 @@ class DiskSpaceManager:
             ll.append((fn.partition("_")[2].rpartition(".iso")[0], size))
         return {"total": total, "disks": ll}
 
-DiskManager.update_disks()
+DiskSpaceManager.update_disks()

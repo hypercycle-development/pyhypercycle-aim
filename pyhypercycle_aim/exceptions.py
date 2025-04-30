@@ -6,3 +6,6 @@ class SubscriptionError(Exception):
 
 class SSHPortManagerError(Exception):
     pass   
+
+class DiskError(Exception):
+    pass
