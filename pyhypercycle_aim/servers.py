@@ -17,7 +17,6 @@ class BaseServer:
         return request.headers.get("hypc_is_private", None)
 
 
-
 class SimpleServer(BaseServer):
     """
         Helper server object that uses the aim_uri decorator.
@@ -34,7 +33,11 @@ class SimpleServer(BaseServer):
         if on_startup is None:
             on_startup = []
         if hasattr(self, 'startup_job'):
+            print("`startup_job` deprecated. Use `on_startup`.")
             on_startup.append(self.startup_job)
+        if hasattr(self, 'on_startup'):
+            on_startup.append(self.on_startup)
+          
         #collect routes from this server
         routes = []
         endpoints_manifest = []
@@ -80,8 +83,15 @@ class SimpleQueue(BaseServer):
             exception_handlers = default_exception_handlers
         if on_startup is None:
             on_startup = []
-        if hasattr(self, "startup_job"):
+    
+        if hasattr(self, 'startup_job'):
+            print("`startup_job` deprecated. Use `on_startup`.")
             on_startup.append(self.startup_job)
+        if hasattr(self, 'on_startup'):
+            on_startup.append(self.on_startup)
+          
+
+
         #collect routes from this server
         routes = []
         endpoints_manifest = []
@@ -184,10 +194,13 @@ class AsyncQueue(BaseServer):
             on_startup = []
 
         on_startup.append(queue_startup)
-        try:
+
+        if hasattr(self, 'startup_job'):
+            print("`startup_job` deprecated. Use `on_startup`.")
             on_startup.append(self.startup_job)
-        except:
-            pass
+        if hasattr(self, 'on_startup'):
+            on_startup.append(self.on_startup)
+
         #collect routes from this server
         routes = []
         endpoints_manifest = []
