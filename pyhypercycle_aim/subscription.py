@@ -38,7 +38,7 @@ class SubscriptionManager:
     @classmethod
     def get_subscription(cls, key):
         os.makedirs("/container_mount/subscriptions", exist_ok=True)
-        key_hash  = hashlib.sha256(key.encode('utf-8'))
+        key_hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
         key_path = f"/container_mount/subscriptions/{key_hash}.json"
 
         try: 
@@ -52,7 +52,7 @@ class SubscriptionManager:
     def save_subscription(cls, data):
         os.makedirs("/container_mount/subscriptions", exist_ok=True)
         key = data['key']
-        key_hash  = hashlib.sha256(key.encode('utf-8'))
+        key_hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
         key_path = f"/container_mount/subscriptions/{key_hash}.json"
         open(key_path, "w").write(json.dumps(data))
         
@@ -70,7 +70,7 @@ class SubscriptionManager:
     @classmethod
     def remove_subscription(cls, key):
         os.makedirs("/container_mount/subscriptions", exist_ok=True)
-        key_hash  = hashlib.sha256(key.encode('utf-8'))
+        key_hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
         key_path = f"/container_mount/subscriptions/{key_hash}.json"
         try:
             os.remove(key_path)
