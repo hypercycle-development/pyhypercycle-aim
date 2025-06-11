@@ -24,8 +24,7 @@ class SubscriptionManager:
             raise SubscriptionError("Invalid metadata: must be instance of dict.")
 
         data  = cls.get_subscription(key)
-        if data['metadata']:
-            data['metadata'] = metadata
+        data['metadata'] = metadata
 
         data['delete_on_expire'] = delete_on_expire
         data['exists'] = True
