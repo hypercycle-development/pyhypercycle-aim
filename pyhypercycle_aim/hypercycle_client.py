@@ -1,6 +1,7 @@
 import sys
 import json
 import requests
+from websocket import create_connection, WebSocketConnectionClosedException
 import pprint
 import time
 import re
@@ -9,6 +10,7 @@ from web3 import Web3
 from eth_account import Account
 from eth_account.messages import encode_defunct
 import argparse
+
 
 client_config = {
     "seed_hosts": ["3.17.97.74:8000"],
@@ -77,6 +79,7 @@ class HyperCycleClient:
         assert 'tx-nonce' in {k.lower() for k in message_headers.keys()}
 
         if body:
+            print([body])
             hash_body = cls._hash_blob(body)
             message += f"hash-body: {hash_body}"
         return {"message": message, "valid": valid}
@@ -151,6 +154,18 @@ class HyperCycleClient:
 
     @classmethod
     def call(cls, node, pk, aim_slot, method, uri, headers, body=None, protocol_version="2", driver="ethereum", cost_only=False, is_public=False):
+        gen = cls._call(node, pk, aim_slot, method, uri, headers, body, protocol_version, 
+                        driver, cost_only, is_public)
+        if method in ["get", "post"]:
+            try:
+                result = next(gen)
+            except StopIteration as e:
+                return e.value
+        else:
+            return gen
+
+    @classmethod
+    def _call(cls, node, pk, aim_slot, method, uri, headers, body=None, protocol_version="2", driver="ethereum", cost_only=False, is_public=False):
         #get user nonce
         w3 = Web3(Web3.HTTPProvider(client_config.get("rpc_provider")))
         sender = w3.eth.account.from_key(pk).address
@@ -163,6 +178,7 @@ class HyperCycleClient:
         #form request:
         headers = {"tx-id": "", "tx-sender":sender, 'tx-origin': sender,
                    'currency-type': "USDC", "spend_order": "USDC,HyPC",
+                   'tx-max-spend': headers.get("tx-max-spend",''),
                    'tx-driver': driver, 'tx-protocol': protocol_version}
         if cost_only:
             headers['cost_only'] = "1"
@@ -177,7 +193,12 @@ class HyperCycleClient:
                 encodedBody = body
                 if isinstance(body, str):
                     encodedBody = encodedBody.encode('utf-8')
-                message = cls.form_protocol_v2_message(headers, method, f"/aim/{aim_slot}{uri}", encodedBody)
+                if method.lower() == "websocket":
+                   uri_path = f"/vm/{aim_slot}{uri}"
+                else:
+                    uri_path = f"/aim/{aim_slot}{uri}"
+
+                message = cls.form_protocol_v2_message(headers, method, uri_path, encodedBody)
                 print('-----------------------------------')
                 print(message['message'])
                 print('----------------------------------')
@@ -185,31 +206,49 @@ class HyperCycleClient:
             headers['tx-signature'] = sig
         if method.lower() == "get":
             res = requests.get(f"http://{node}/aim/{aim_slot}{uri}", headers=headers)
+            res = res.text
         elif method.lower() == "post":
             res = requests.post(f"http://{node}/aim/{aim_slot}{uri}", headers=headers, data=body)
-        return res.text
+            res = res.text
+        elif method.lower() == "websocket":
+            res = yield from websocket_call(f"ws://{node}/vm/{aim_slot}{uri}", headers=headers,body=body)
+        return res
 
 
-class ClientCLI:
-    @classmethod
-    def list_nodes(cls):
-        print("Nodes")
-        print("============================")
-        res = HyperCycleClient.list_nodes()
-        for node in res:
-            print(f"- {node}")
 
-    @classmethod
-    def node_info(cls, node):
-        print("Node Info")
-        print("============================")
-        res = HyperCycleClient.node_info(node)
-        pprint.pprint(res)
+def websocket_call(uri, headers, body):
+    print(uri)
+    res = None
+    try:
+        ws = create_connection(uri, header=headers)#, header=[f"{k}: {v}" for k, v in headers.items()])
+        print(headers)
+        print("Connected to server.")
+        ws.send(body)
+        while True:
+            try:
+                response = ws.recv()
+                print("============================")
+                print(response)
+                res = json.loads(response)
 
-    @classmethod
-    def load_config(cls, filename):
-        data = json.loads(open(filename).read())
-        return data
+                if res.get('status') == "return":
+                    print("Returned", res['result'])
+                    break
+                elif res.get('status') == "partial":
+                    print("Partial", res['result'])
+                    send_bytes = yield res
+                    print("FFFFFFFFDDDDDDDDDDDD", send_bytes)
+                    ws.send(send_bytes)
+                else:
+                    print(res.get("status"), "LLLLLLLLLLLLL")
+                    print("ISSUE", res)
+                    ws.send(json.dumps({"status": "???"}))
+            except WebSocketConnectionClosedException:
+                print("Connection closed by server.")
+                break
+    finally:
+        ws.close()
+    return res
 
 
 class ClientCLI:

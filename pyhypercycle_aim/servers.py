@@ -1,12 +1,11 @@
 import asyncio
 import inspect
 import time
-
 import uvicorn
 from pyhypercycle_aim.util import to_async, JSONResponseCORS, default_exception_handlers, \
     aim_uri
 from starlette.applications import Starlette
-from starlette.routing import Route
+from starlette.routing import Route, WebSocketRoute
 
 
 class BaseServer:
@@ -48,7 +47,10 @@ class SimpleServer(BaseServer):
                 if hasattr(ff, "_uri"):
                     if ff._uri == "/manifest.json":
                         has_manifest_override = True
-                    routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
+                    if "websocket" in [x.lower() for x in ff._methods]:
+                        routes.append(WebSocketRoute(ff._uri, ff, **ff._kwargs))
+                    else:
+                        routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
                     endpoints_manifest.append(ff._endpoint_manifest)
         self.manifest_json = self.manifest.copy()
         self.manifest_json['endpoints'] = endpoints_manifest
@@ -102,7 +104,11 @@ class SimpleQueue(BaseServer):
                 if hasattr(ff, "_uri"):
                     if ff._uri == "/manifest.json":
                         has_manifest_override = True
-                    routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
+                    if "websocket" in [x.lower() for x in ff._methods]:
+                        routes.append(WebSocketRoute(ff._uri, ff, **ff._kwargs))
+                    else:
+                        routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
+
                     if ff._uri == "/queue":
                         endpoints_manifest.insert(0,ff._endpoint_manifest)
                     else:
@@ -211,7 +217,11 @@ class AsyncQueue(BaseServer):
                 if hasattr(ff, "_uri"):
                     if ff._uri == "/manifest.json":
                         has_manifest_override = True
-                    routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
+                    if "websocket" in [x.lower() for x in ff._methods]:
+                        routes.append(WebSocketRoute(ff._uri, ff, **ff._kwargs))
+                    else:
+                        routes.append(Route(ff._uri, ff, methods=ff._methods, **ff._kwargs))
+
                     if ff._uri == "/queue":
                         endpoints_manifest.insert(0,ff._endpoint_manifest)
                     else:

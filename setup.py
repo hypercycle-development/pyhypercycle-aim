@@ -8,7 +8,7 @@ def main(args=None):
 
     setup_required_packages = []
 
-    required_packages = ["starlette", "uvicorn", "filelock"
+    required_packages = ["starlette", "uvicorn[standard]", "filelock", "web3", "websocket-client"
                         ]
 
     test_required_packages = ["nose", "coverage"]
