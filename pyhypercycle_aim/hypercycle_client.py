@@ -131,16 +131,19 @@ class HyperCycleClient:
         res = cls._rpc_request("/rpc/search", params=params, timeout=timeout)
         if res is None:
             return []
-        if not isinstance(res, list):
+        nodes = res.get("result", res) if isinstance(res, dict) else res
+        if not isinstance(nodes, list):
             return []
-        return [n.get("address") for n in res if n.get("address")]
+        return [n.get("address") for n in nodes if isinstance(n, dict) and n.get("address")]
 
     @classmethod
     def node_info(cls, node, timeout=20):
         """Get node info via RPC from seed host."""
         encoded_address = quote(node, safe="")
         res = cls._rpc_request(f"/rpc/node/{encoded_address}", timeout=timeout)
-        return res
+        if res is None:
+            return None
+        return res.get("result", res) if isinstance(res, dict) else res
 
     @classmethod
     def get_available_aims(cls, network=None, timeout=20):
@@ -148,7 +151,10 @@ class HyperCycleClient:
         params = {}
         if network is not None:
             params["network"] = network
-        return cls._rpc_request("/rpc/aims", params=params, timeout=timeout)
+        res = cls._rpc_request("/rpc/aims", params=params, timeout=timeout)
+        if res is None:
+            return None
+        return res.get("result", res) if isinstance(res, dict) else res
  
     @classmethod
     def connect_to_node(cls, node, pk, amount, currency, driver):
