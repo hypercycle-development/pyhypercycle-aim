@@ -1,13 +1,15 @@
 import subprocess
 import os
+import errno
 from filelock import FileLock
 from pyhypercycle_aim.exceptions import DiskError
 
 try:
     os.makedirs("/container_mount/virtual_disks", exist_ok=True)
     os.makedirs("/container_mount/disk_mounts", exist_ok=True)
-except OSError:
-    pass  # Not in container or read-only - skip
+except OSError as e:
+    if e.errno != errno.EROFS:
+        raise # not in container or read-only - skip
 
 class DiskSpaceManager:
     @classmethod
