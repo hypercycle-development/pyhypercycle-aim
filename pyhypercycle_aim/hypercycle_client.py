@@ -1,6 +1,7 @@
 import sys
 import json
 import requests
+from urllib.parse import quote
 from websocket import create_connection, WebSocketConnectionClosedException
 import pprint
 import time
@@ -90,16 +91,64 @@ class HyperCycleClient:
         return hash_object.hexdigest()
 
     @classmethod
-    def list_nodes(cls):
-        for seed_host in client_config['seed_hosts']:
-            res = requests.get(f"http://{seed_host}/nodes").json()
-            return res['nodes']
-            break
+    def _rpc_request(cls, path, params=None, timeout=20):
+        """Make a request to the RPC service on a seed host."""
+        for seed_host in client_config["seed_hosts"]:
+            try:
+                url = f"http://{seed_host}{path}"
+                res = requests.get(url, params=params, timeout=timeout)
+                res.raise_for_status()
+                return res.json()
+            except requests.RequestException:
+                continue
+        return None
+
+    @classmethod
+    def list_nodes(cls, network=None, aim_name=None, aim_version=None, aim_uri=None,
+                   status="alive", limit=None, order="desc", order_by="last_updated",
+                   node_version=None, timeout=20):
+        """List nodes via RPC search. Returns list of node addresses (or full data if limit=1 and single result)."""
+        params = {}
+        if network is not None:
+            params["network"] = network
+        if aim_name is not None:
+            params["aim_name"] = aim_name
+        if aim_version is not None:
+            params["aim_version"] = aim_version
+        if aim_uri is not None:
+            params["aim_uri"] = aim_uri
+        if status is not None:
+            params["status"] = status
+        if limit is not None:
+            params["limit"] = limit
+        if order is not None:
+            params["order"] = order
+        if order_by is not None:
+            params["order_by"] = order_by
+        if node_version is not None:
+            params["node_version"] = node_version
+
+        res = cls._rpc_request("/rpc/search", params=params, timeout=timeout)
+        if res is None:
+            return []
+        if not isinstance(res, list):
+            return []
+        return [n.get("address") for n in res if n.get("address")]
 
     @classmethod
     def node_info(cls, node, timeout=20):
-        res = requests.get(f"http://{node}/info", timeout=timeout).json()
+        """Get node info via RPC from seed host."""
+        encoded_address = quote(node, safe="")
+        res = cls._rpc_request(f"/rpc/node/{encoded_address}", timeout=timeout)
         return res
+
+    @classmethod
+    def get_available_aims(cls, network=None, timeout=20):
+        """Get available AIMs across nodes via RPC."""
+        params = {}
+        if network is not None:
+            params["network"] = network
+        return cls._rpc_request("/rpc/aims", params=params, timeout=timeout)
  
     @classmethod
     def connect_to_node(cls, node, pk, amount, currency, driver):
@@ -257,13 +306,31 @@ class ClientCLI:
         self.subparsers = self.parser.add_subparsers(dest="command", help="Available commands")
 
         # List Nodes Command
-        list_nodes_parser = self.subparsers.add_parser("list-nodes", help="List available HyperCycle nodes.")
+        list_nodes_parser = self.subparsers.add_parser("list-nodes", help="List available HyperCycle nodes (via RPC search).")
+        list_nodes_parser.add_argument("--network", type=str, help="Filter by network (e.g., mainnet, testnet).")
+        list_nodes_parser.add_argument("--aim-name", type=str, help="Filter nodes that have an AIM with this name.")
+        list_nodes_parser.add_argument("--aim-version", type=str, help="Filter nodes that have an AIM with this version.")
+        list_nodes_parser.add_argument("--aim-uri", type=str, help="Filter nodes that have an AIM with this URI.")
+        list_nodes_parser.add_argument("--status", type=str, choices=["alive", "dead"], default="alive",
+                                       help="Filter by node status (default: alive).")
+        list_nodes_parser.add_argument("--limit", type=int, help="Maximum number of nodes to return.")
+        list_nodes_parser.add_argument("--order", type=str, choices=["asc", "desc"], default="desc",
+                                       help="Sort order (default: desc).")
+        list_nodes_parser.add_argument("--order-by", type=str, default="last_updated",
+                                       help="Field to sort by (default: last_updated).")
+        list_nodes_parser.add_argument("--node-version", type=str,
+                                       help="Filter by node version (e.g., '>=0.4.16', '==0.4.16').")
         list_nodes_parser.set_defaults(func=self.list_nodes)
 
         # Node Info Command
-        node_info_parser = self.subparsers.add_parser("node-info", help="Get information about a specific HyperCycle node.")
+        node_info_parser = self.subparsers.add_parser("node-info", help="Get information about a specific HyperCycle node (via RPC).")
         node_info_parser.add_argument("node", type=str, help="The address of the node (e.g., 'localhost:8000').")
         node_info_parser.set_defaults(func=self.node_info)
+
+        # Get Available AIMs Command
+        get_aims_parser = self.subparsers.add_parser("get-aims", help="Get available AIMs across nodes (via RPC).")
+        get_aims_parser.add_argument("--network", type=str, help="Filter by network.")
+        get_aims_parser.set_defaults(func=self.get_aims)
 
         # Connect Command
         connect_parser = self.subparsers.add_parser("connect", help="Connect to a HyperCycle node by sending tokens.")
@@ -344,7 +411,17 @@ class ClientCLI:
     def list_nodes(self, args):
         print("Nodes")
         print("============================")
-        nodes = HyperCycleClient.list_nodes()
+        nodes = HyperCycleClient.list_nodes(
+            network=getattr(args, "network", None),
+            aim_name=getattr(args, "aim_name", None),
+            aim_version=getattr(args, "aim_version", None),
+            aim_uri=getattr(args, "aim_uri", None),
+            status=getattr(args, "status", "alive"),
+            limit=getattr(args, "limit", None),
+            order=getattr(args, "order", "desc"),
+            order_by=getattr(args, "order_by", "last_updated"),
+            node_version=getattr(args, "node_version", None),
+        )
         if nodes:
             for node in nodes:
                 print(f"- {node}")
@@ -405,6 +482,15 @@ class ClientCLI:
         else:
             print(f"Could not retrieve manifest for AIM slot {args.aim_slot} from node {args.node}.")
 
+    def get_aims(self, args):
+        print("Available AIMs")
+        print("============================")
+        res = HyperCycleClient.get_available_aims(network=getattr(args, "network", None))
+        if res:
+            pprint.pprint(res)
+        else:
+            print("Could not retrieve AIMs or no seed hosts available.")
+
     def call_aim(self, args):
         print(f"Calling AIM slot {args.aim_slot} on node {args.node} with method {args.method} and URI {args.uri}...")
         res = HyperCycleClient.call(
@@ -414,7 +500,7 @@ class ClientCLI:
             args.method,
             args.uri,
             args.headers,
-            body_str=args.body,
+            body=args.body,
             protocol_version=args.protocol_version,
             driver=args.driver,
             cost_only=args.cost_only,
