@@ -1,10 +1,15 @@
 import subprocess
 import os
+import errno
 from filelock import FileLock
 from pyhypercycle_aim.exceptions import DiskError
 
-os.makedirs("/container_mount/virtual_disks", exist_ok=True)
-os.makedirs("/container_mount/disk_mounts", exist_ok=True)
+try:
+    os.makedirs("/container_mount/virtual_disks", exist_ok=True)
+    os.makedirs("/container_mount/disk_mounts", exist_ok=True)
+except OSError as e:
+    if e.errno != errno.EROFS:
+        raise # not in container or read-only - skip
 
 class DiskSpaceManager:
     @classmethod
@@ -97,4 +102,6 @@ class DiskSpaceManager:
             ll.append((fn.partition("_")[2].rpartition(".iso")[0], size))
         return {"total": total, "disks": ll}
 
-DiskSpaceManager.update_disks()
+
+if os.path.exists("/container_mount/virtual_disks"):
+    DiskSpaceManager.update_disks()
