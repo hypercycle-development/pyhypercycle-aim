@@ -8,10 +8,17 @@ def main(args=None):
 
     setup_required_packages = []
 
-    required_packages = ["starlette", "uvicorn[standard]", "filelock", "web3", "websocket-client"
-                        ]
-
-    test_required_packages = ["nose", "coverage"]
+    required_packages = [
+        "fastapi>=0.100",
+        "uvicorn[standard]>=0.23",
+        "starlette>=0.27",
+        "pydantic>=2.0",
+        "filelock",
+        "web3",
+        "websocket-client",
+        "langdetect",
+    ]
+                  
 
     settings = dict(name="pyhypercycle_aim",
                     version=__VERSION__,
@@ -26,8 +33,6 @@ def main(args=None):
                     include_package_data=True,
                     zip_safe=False,
                     install_requires=required_packages,
-                    tests_require=test_required_packages,
-                    test_suite="nose.collector",
                     setup_requires=setup_required_packages
                     )
     if args:
