@@ -4,11 +4,12 @@ import time
 import uvicorn
 from pyhypercycle_aim.util import to_async, JSONResponseCORS, default_exception_handlers, \
     aim_uri
+from pyhypercycle_aim.offers import OfferDocumentMixin
 from starlette.applications import Starlette
 from starlette.routing import Route, WebSocketRoute
 
 
-class BaseServer:
+class BaseServer(OfferDocumentMixin):
     def get_user_address(self, request):
         return request.headers.get("hypc_user", None)
 
@@ -56,9 +57,13 @@ class SimpleServer(BaseServer):
         self.manifest_json['endpoints'] = endpoints_manifest
         
         if has_manifest_override is False:
-            routes.append(Route("/manifest.json", 
+            routes.append(Route("/manifest.json",
                                 lambda *args, **kwargs: JSONResponseCORS(self.manifest_json),
                                 methods=["GET"]))
+
+        # Signed node Offer Document at /.well-known/hypercycle/offers.json
+        # (opt out with `serve_offer_document = False`). See offers.py.
+        self._register_offer_route(routes)
 
         self.job_queue = []
         self.queue_counter = 0
@@ -117,9 +122,13 @@ class SimpleQueue(BaseServer):
         self.manifest_json['endpoints'] = endpoints_manifest
         
         if has_manifest_override is False:
-            routes.append(Route("/manifest.json", 
+            routes.append(Route("/manifest.json",
                                 lambda *args, **kwargs: JSONResponseCORS(self.manifest_json),
                                 methods=["GET"]))
+
+        # Signed node Offer Document at /.well-known/hypercycle/offers.json
+        # (opt out with `serve_offer_document = False`). See offers.py.
+        self._register_offer_route(routes)
 
         self.job_queue = []
         self.queue_counter = 0
@@ -242,9 +251,13 @@ class AsyncQueue(BaseServer):
             self.manifest_json['endpoints'] = new_endpoints
                     
         if has_manifest_override is False:
-            routes.append(Route("/manifest.json", 
+            routes.append(Route("/manifest.json",
                                 lambda *args, **kwargs: JSONResponseCORS(self.manifest_json),
                                 methods=["GET"]))
+
+        # Signed node Offer Document at /.well-known/hypercycle/offers.json
+        # (opt out with `serve_offer_document = False`). See offers.py.
+        self._register_offer_route(routes)
 
         self.job_queue = []
         self.queue_counter = 0
